@@ -207,6 +207,34 @@ export const listingsService = {
       return { success: false, error: 'Not authenticated' };
     }
 
+    if (!useAuthStore.getState().isDemoMode) {
+      const payload = {
+        title: listingData.title || '',
+        description: listingData.description || '',
+        city: listingData.city || 'Алматы',
+        price: listingData.price || 0,
+        housingType: listingData.housingType || 'room',
+        capacity: listingData.capacity || 1,
+        tags: listingData.tags || [],
+        images: listingData.images || [],
+        availableSpots: listingData.availableSpots || 1,
+        owner_id: authUser.id,
+      };
+
+      const { data, error } = await supabase
+        .from('listings')
+        .insert(payload)
+        .select('*, owner:users(*)')
+        .single();
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      useListingsStore.getState().addListing(data as Listing);
+      return { success: true, data: data as Listing };
+    }
+
     const newListing: Listing = {
       id: `listing-${Date.now()}`,
       title: listingData.title || '',
@@ -293,6 +321,10 @@ export const interestsService = {
     const authUser = useAuthStore.getState().user;
     if (!authUser) {
       return { success: false, error: 'Not authenticated' };
+    }
+
+    if (listing.owner.id === authUser.id) {
+      return { success: false, error: 'Нельзя откликнуться на собственное объявление' };
     }
 
     const newInterest: Interest = {

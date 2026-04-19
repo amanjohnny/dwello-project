@@ -89,6 +89,7 @@ export const CreateListingPage = () => {
     try {
       const finalImageUrls: string[] = [];
       const user = useAuthStore.getState().user;
+      const uploadErrors: string[] = [];
 
       if (!useAuthStore.getState().isDemoMode && imageFiles.length > 0 && user) {
         for (let i = 0; i < imageFiles.length; i++) {
@@ -103,6 +104,7 @@ export const CreateListingPage = () => {
 
             if (error) {
               console.error("Listing image upload failed:", error.message);
+              uploadErrors.push(`${file.name}: ${error.message}`);
             } else if (data) {
               const { data: publicUrlData } = supabase.storage
                 .from('listing-images')
@@ -111,7 +113,14 @@ export const CreateListingPage = () => {
             }
           } catch (err) {
             console.error("Unexpected listing image upload error:", err);
+            uploadErrors.push(`${imageFiles[i].name}: unexpected upload error`);
           }
+        }
+
+        if (uploadErrors.length > 0 && finalImageUrls.length === 0) {
+          setError('Не удалось загрузить изображения в Supabase Storage. Проверьте бакет listing-images и Storage policies.');
+          setIsLoading(false);
+          return;
         }
       } else if (useAuthStore.getState().isDemoMode) {
         // Fallback to local blobs for demo

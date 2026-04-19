@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Users, Heart, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, TagsList, Button } from './ui';
-import { useLanguageStore } from '../store';
+import { useAuthStore, useLanguageStore } from '../store';
 import { t } from '../i18n';
 import type { Listing } from '../types';
 
@@ -14,7 +14,9 @@ interface ListingCardProps {
 
 export const ListingCard = ({ listing, onInterest, isInterested }: ListingCardProps) => {
   const { language } = useLanguageStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
+  const isOwnListing = user?.id === listing.owner.id;
   
   const housingTypeLabels = {
     room: t('room', language),
@@ -96,18 +98,20 @@ export const ListingCard = ({ listing, onInterest, isInterested }: ListingCardPr
                 Подробнее
               </Button>
             </Link>
-            <Button
-              variant={isInterested ? 'primary' : 'outline'}
-              size="sm"
-              className="gap-1"
-              onClick={(e) => {
-                e.stopPropagation();
-                onInterest?.(listing);
-              }}
-            >
-              <Heart className={`w-3.5 h-3.5 ${isInterested ? 'fill-current' : ''}`} />
-              {isInterested ? 'Интерес' : 'Интересно'}
-            </Button>
+            {!isOwnListing ? (
+              <Button
+                variant={isInterested ? 'primary' : 'outline'}
+                size="sm"
+                className="gap-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onInterest?.(listing);
+                }}
+              >
+                <Heart className={`w-3.5 h-3.5 ${isInterested ? 'fill-current' : ''}`} />
+                {isInterested ? 'Интерес' : 'Интересно'}
+              </Button>
+            ) : null}
           </div>
         </div>
       </div>
