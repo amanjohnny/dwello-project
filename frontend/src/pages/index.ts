@@ -1,0 +1,8 @@
+export { LoginPage } from './Login';
+export { RegisterPage } from './Register';
+export { HomePage } from './Home';
+export { SearchPage } from './Search';
+export { ListingDetailsPage } from './ListingDetails';
+export { CreateListingPage } from './CreateListing';
+export { MatchesPage } from './Matches';
+export { ProfilePage } from './Profile';
