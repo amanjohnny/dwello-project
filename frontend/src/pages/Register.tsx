@@ -8,7 +8,7 @@ import { KAZAKHSTAN_CITIES, type KazakhstanCity } from '../types';
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
-  const { login, setLoading } = useAuthStore();
+  const { login, setLoading, setDemoMode } = useAuthStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,6 +40,7 @@ export const RegisterPage = () => {
 
     setIsLoading(true);
     setLoading(true);
+    setDemoMode(false); // standard registration clears demo mode
 
     try {
       const response = await authService.register({

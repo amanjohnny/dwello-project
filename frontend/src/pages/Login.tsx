@@ -7,7 +7,7 @@ import { useAuthStore } from '../store';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const { login, setLoading } = useAuthStore();
+  const { login, setLoading, setDemoMode } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,6 +18,11 @@ export const LoginPage = () => {
     setError('');
     setIsLoading(true);
     setLoading(true);
+
+    // If not using demo button directly, ensure demo mode is false for generic login
+    if (password !== 'demo123') {
+      setDemoMode(false);
+    }
 
     try {
       const response = await authService.login({ email, password });
@@ -106,6 +111,7 @@ export const LoginPage = () => {
               variant="outline"
               size="sm"
               onClick={() => {
+                setDemoMode(true);
                 setEmail('demo@example.com');
                 setPassword('demo123');
                 setTimeout(() => {

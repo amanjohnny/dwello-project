@@ -187,26 +187,39 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isDemoMode: boolean;
   login: (user: User) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
+  setDemoMode: (isDemoMode: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      isDemoMode: false,
       login: (user) => {
         set({ user, isAuthenticated: true, isLoading: false });
-        useListingsStore.getState().setListings(mockListings);
+        if (get().isDemoMode) {
+          useListingsStore.getState().setListings(mockListings);
+        } else {
+          useListingsStore.getState().setListings([]);
+          useCommentsStore.getState().setComments([]);
+          useMessagesStore.getState().setMessages([]);
+          useInterestsStore.getState().setInterests([]);
+        }
       },
       logout: () => {
         set({ user: null, isAuthenticated: false, isLoading: false });
         useListingsStore.getState().setListings(mockListings);
+        // Do not reset demo mode on logout to keep existing flow happy,
+        // but reset data to safe default.
       },
       setLoading: (isLoading) => set({ isLoading }),
+      setDemoMode: (isDemoMode) => set({ isDemoMode }),
     }),
     {
       name: 'dwello-auth',
@@ -298,6 +311,7 @@ export const useListingsStore = create<ListingsState>()((set, get) => ({
 interface InterestsState {
   interests: Interest[];
   myListingsInterests: Interest[];
+  setInterests: (interests: Interest[]) => void;
   addInterest: (listing: Listing) => void;
   updateInterestStatus: (interestId: string, status: 'pending' | 'accepted' | 'rejected') => void;
 }
@@ -305,6 +319,7 @@ interface InterestsState {
 export const useInterestsStore = create<InterestsState>()((set, get) => ({
   interests: [],
   myListingsInterests: [],
+  setInterests: (interests) => set({ interests }),
 
   addInterest: (listing) => {
     const authUser = useAuthStore.getState().user;
