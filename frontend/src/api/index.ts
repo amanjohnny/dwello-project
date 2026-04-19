@@ -1,3 +1,4 @@
+import { supabase } from "./supabase";
 import type {
   Comment,
   Message,
@@ -32,9 +33,32 @@ const mockUsers: User[] = [
 // Auth Service
 export const authService = {
   async login(credentials: LoginCredentials): Promise<ApiResponse<User>> {
+    if (!useAuthStore.getState().isDemoMode) {
+      // Real Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (authError) return { success: false, error: authError.message };
+
+      if (authData.user) {
+        // Fetch user profile from public.users table
+        const { data: userProfile, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (profileError) return { success: false, error: profileError.message };
+        return { success: true, data: userProfile };
+      }
+      return { success: false, error: 'Unknown error during login' };
+    }
+
     await delay(800);
     
-    // Mock authentication - in production, this would call the backend
+    // Mock authentication
     const user = mockUsers.find((u) => u.email === credentials.email);
     
     if (user && credentials.password === 'demo123') {
@@ -54,6 +78,33 @@ export const authService = {
   },
 
   async register(data: RegisterData): Promise<ApiResponse<User>> {
+    if (!useAuthStore.getState().isDemoMode) {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (authError) return { success: false, error: authError.message };
+
+      if (authData.user) {
+        // Create user profile in public.users table
+        const { data: userProfile, error: profileError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            name: data.name,
+            email: data.email,
+            city: data.city,
+          })
+          .select()
+          .single();
+
+        if (profileError) return { success: false, error: profileError.message };
+        return { success: true, data: userProfile };
+      }
+      return { success: false, error: 'Unknown error during registration' };
+    }
+
     await delay(800);
     
     // Mock registration
@@ -78,17 +129,41 @@ export const authService = {
     const { user } = useAuthStore.getState();
     return { success: true, data: user };
   },
+
+  async getUserById(userId: string): Promise<ApiResponse<User | null>> {
+    if (!useAuthStore.getState().isDemoMode) {
+      const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data };
+    }
+
+    await delay(300);
+    const user = mockUsers.find(u => u.id === userId);
+    return { success: true, data: user || null };
+  }
 };
 
 // Listings Service
 export const listingsService = {
   async getListings(): Promise<ApiResponse<Listing[]>> {
+    if (!useAuthStore.getState().isDemoMode) {
+      const { data, error } = await supabase.from('listings').select('*, owner:users(*)');
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data || [] };
+    }
+
     await delay(500);
     const { listings } = useListingsStore.getState();
     return { success: true, data: listings };
   },
 
   async getListingById(id: string): Promise<ApiResponse<Listing | null>> {
+    if (!useAuthStore.getState().isDemoMode) {
+      const { data, error } = await supabase.from('listings').select('*, owner:users(*)').eq('id', id).single();
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data };
+    }
+
     await delay(300);
     const { listings } = useListingsStore.getState();
     const listing = listings.find((l) => l.id === id);
@@ -260,6 +335,15 @@ export const searchService = {
 // Comments Service
 export const commentsService = {
   async getCommentsByListingId(listingId: string): Promise<ApiResponse<Comment[]>> {
+    if (!useAuthStore.getState().isDemoMode) {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*, user:users(*)')
+        .eq('listing_id', listingId);
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data || [] };
+    }
+
     await delay(300);
     const { comments } = useCommentsStore.getState();
     const listingComments = comments.filter((c) => c.listing_id === listingId);
@@ -267,12 +351,27 @@ export const commentsService = {
   },
 
   async addComment(listingId: string, content: string): Promise<ApiResponse<Comment>> {
-    await delay(500);
-
     const authUser = useAuthStore.getState().user;
     if (!authUser) {
       return { success: false, error: 'Not authenticated' };
     }
+
+    if (!useAuthStore.getState().isDemoMode) {
+      const { data, error } = await supabase
+        .from('comments')
+        .insert({
+          listing_id: listingId,
+          user_id: authUser.id,
+          content,
+        })
+        .select('*, user:users(*)')
+        .single();
+
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data };
+    }
+
+    await delay(500);
 
     const newComment: Comment = {
       id: `comment-${Date.now()}`,
@@ -292,6 +391,16 @@ export const commentsService = {
 // Messages Service
 export const messagesService = {
   async getMessages(userId1: string, userId2: string): Promise<ApiResponse<Message[]>> {
+    if (!useAuthStore.getState().isDemoMode) {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${userId1},receiver_id.eq.${userId2}),and(sender_id.eq.${userId2},receiver_id.eq.${userId1})`)
+        .order('createdAt', { ascending: true });
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data || [] };
+    }
+
     await delay(300);
     const { messages } = useMessagesStore.getState();
     const chatMessages = messages.filter(
@@ -303,12 +412,26 @@ export const messagesService = {
   },
 
   async sendMessage(receiverId: string, content: string): Promise<ApiResponse<Message>> {
-    await delay(300);
-
     const authUser = useAuthStore.getState().user;
     if (!authUser) {
       return { success: false, error: 'Not authenticated' };
     }
+
+    if (!useAuthStore.getState().isDemoMode) {
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: authUser.id,
+          receiver_id: receiverId,
+          content,
+        })
+        .select()
+        .single();
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data };
+    }
+
+    await delay(300);
 
     const newMessage: Message = {
       id: `msg-${Date.now()}`,
