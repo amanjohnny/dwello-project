@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Users, Heart, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, TagsList, Button } from './ui';
@@ -14,6 +14,7 @@ interface ListingCardProps {
 
 export const ListingCard = ({ listing, onInterest, isInterested }: ListingCardProps) => {
   const { language } = useLanguageStore();
+  const navigate = useNavigate();
   
   const housingTypeLabels = {
     room: t('room', language),
@@ -26,13 +27,18 @@ export const ListingCard = ({ listing, onInterest, isInterested }: ListingCardPr
     return new Intl.NumberFormat('ru-RU').format(price) + ' ₸';
   };
 
+  const handleCardClick = () => {
+    navigate(`/listing/${listing.id}`);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.3 }}
-      className="h-full"
+      className="h-full cursor-pointer"
+      onClick={handleCardClick}
     >
       <Card hover className="overflow-hidden group h-full">
         {/* Image */}
@@ -84,7 +90,7 @@ export const ListingCard = ({ listing, onInterest, isInterested }: ListingCardPr
           </div>
 
           <div className="flex gap-2">
-            <Link to={`/listing/${listing.id}`}>
+            <Link to={`/listing/${listing.id}`} onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="sm" className="gap-1">
                 <Eye className="w-3.5 h-3.5" />
                 Подробнее
@@ -94,7 +100,10 @@ export const ListingCard = ({ listing, onInterest, isInterested }: ListingCardPr
               variant={isInterested ? 'primary' : 'outline'}
               size="sm"
               className="gap-1"
-              onClick={() => onInterest?.(listing)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onInterest?.(listing);
+              }}
             >
               <Heart className={`w-3.5 h-3.5 ${isInterested ? 'fill-current' : ''}`} />
               {isInterested ? 'Интерес' : 'Интересно'}

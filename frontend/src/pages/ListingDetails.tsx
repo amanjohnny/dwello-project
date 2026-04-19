@@ -188,26 +188,28 @@ export const ListingDetailsPage = () => {
             {/* Owner */}
             <Card className="p-4">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Владелец</h2>
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  {listing.owner.avatar ? (
-                    <img
-                      src={listing.owner.avatar}
-                      alt={listing.owner.name}
-                      className="w-full h-full rounded-full object-cover"
-                    />
-                  ) : (
-                    <User className="w-8 h-8 text-blue-600" />
-                  )}
+              <Link to={`/profile/${listing.owner.id}`} className="block">
+                <div className="flex items-start gap-4 hover:bg-slate-50 p-2 -m-2 rounded-xl transition-colors cursor-pointer">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {listing.owner.avatar ? (
+                      <img
+                        src={listing.owner.avatar}
+                        alt={listing.owner.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-8 h-8 text-blue-600" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{listing.owner.name}</h3>
+                    <p className="text-slate-500 text-sm">{listing.owner.city}</p>
+                    {listing.owner.bio && (
+                      <p className="text-slate-600 text-sm mt-2">{listing.owner.bio}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-slate-900">{listing.owner.name}</h3>
-                  <p className="text-slate-500 text-sm">{listing.owner.city}</p>
-                  {listing.owner.bio && (
-                    <p className="text-slate-600 text-sm mt-2">{listing.owner.bio}</p>
-                  )}
-                </div>
-              </div>
+              </Link>
             </Card>
           </div>
 

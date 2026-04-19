@@ -40,7 +40,7 @@ export const CreateListingPage = () => {
   const [capacity, setCapacity] = useState('1');
   const [availableSpots, setAvailableSpots] = useState('1');
   const [tags, setTags] = useState<LifestyleTag[]>([]);
-  const [images, setImages] = useState<string[]>([defaultImages[0]]);
+  const [images, setImages] = useState<string[]>([]);
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -251,21 +251,21 @@ export const CreateListingPage = () => {
                   </div>
                 ))}
                 {images.length < 4 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const unusedImages = defaultImages.filter(
-                        (img) => !images.includes(img)
-                      );
-                      if (unusedImages.length > 0) {
-                        setImages([...images, unusedImages[0]]);
-                      }
-                    }}
-                    className="aspect-square rounded-xl border-2 border-dashed border-slate-200 hover:border-blue-400 flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-blue-500 transition-colors"
-                  >
+                  <label className="aspect-square rounded-xl border-2 border-dashed border-slate-200 hover:border-blue-400 flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-blue-500 transition-colors cursor-pointer">
                     <Upload className="w-6 h-6" />
                     <span className="text-xs">Добавить</span>
-                  </button>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        const newImages = files.map(file => URL.createObjectURL(file));
+                        setImages((prev) => [...prev, ...newImages].slice(0, 4));
+                      }}
+                    />
+                  </label>
                 )}
               </div>
               <p className="text-xs text-slate-500 mt-2">

@@ -10,7 +10,8 @@ import {
   ListingDetailsPage, 
   CreateListingPage,
   MatchesPage,
-  ProfilePage 
+  ProfilePage,
+  PublicProfilePage
 } from './pages';
 import { useAuthStore } from './store';
 
@@ -104,6 +105,14 @@ const AppContent = () => {
                 <ProfilePage />
               </ProtectedRoute>
             } 
+          />
+          <Route
+            path="/profile/:userId"
+            element={
+              <ProtectedRoute>
+                <PublicProfilePage />
+              </ProtectedRoute>
+            }
           />
         </Route>
         
