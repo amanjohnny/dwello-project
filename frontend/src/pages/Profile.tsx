@@ -20,7 +20,8 @@ import {
 import { Button, Card, Badge, Input, Textarea, Select } from '../components';
 import { useAuthStore, useListingsStore, useInterestsStore, useLanguageStore, useSettingsStore } from '../store';
 import { t } from '../i18n';
-import { listingsService } from '../api';
+import { listingsService, authService } from '../api';
+import { supabase } from '../api/supabase';
 import { KAZAKHSTAN_CITIES, type KazakhstanCity } from '../types';
 
 export const ProfilePage = () => {
@@ -37,6 +38,8 @@ export const ProfilePage = () => {
   const [editedBio, setEditedBio] = useState(user?.bio || '');
   const [editedPhone, setEditedPhone] = useState(user?.phone || '');
   const [editedAvatar, setEditedAvatar] = useState(user?.avatar || '');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [avatarError, setAvatarError] = useState('');
   const [activeTab, setActiveTab] = useState<'listings' | 'clientInterests' | 'interests' | 'settings'>('listings');
 
@@ -67,21 +70,59 @@ export const ProfilePage = () => {
       return;
     }
 
+    setAvatarFile(file);
     setEditedAvatar(URL.createObjectURL(file));
   };
 
-  const handleSaveProfile = () => {
-    if (user && editedName) {
-      login({
-        ...user,
-        name: editedName,
-        city: editedCity as KazakhstanCity,
-        bio: editedBio,
-        phone: editedPhone,
-        avatar: editedAvatar,
-      });
-      setIsEditing(false);
+  const handleSaveProfile = async () => {
+    if (!user || !editedName) return;
+
+    setIsSaving(true);
+    let finalAvatarUrl = user.avatar;
+
+    if (avatarFile && !useAuthStore.getState().isDemoMode) {
+      try {
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, avatarFile);
+
+        if (uploadError) {
+          console.error("Avatar upload failed:", uploadError.message);
+          // Don't throw, gracefully fallback to existing avatar or text-only save
+        } else if (uploadData) {
+          const { data: publicUrlData } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+          finalAvatarUrl = publicUrlData.publicUrl;
+        }
+      } catch (err) {
+        console.error("Unexpected avatar upload error:", err);
+      }
+    } else if (avatarFile && useAuthStore.getState().isDemoMode) {
+        // Just use blob URL for demo mode
+        finalAvatarUrl = editedAvatar;
     }
+
+    const updatedData = {
+      name: editedName,
+      city: editedCity as KazakhstanCity,
+      bio: editedBio,
+      phone: editedPhone,
+      avatar: finalAvatarUrl,
+    };
+
+    const res = await authService.updateProfile(user.id, updatedData);
+
+    if (res.success) {
+      setIsEditing(false);
+      setAvatarFile(null);
+    } else {
+        console.error("Failed to update profile", res.error);
+    }
+
+    setIsSaving(false);
   };
 
   const handleDeleteListing = async (listingId: string) => {
@@ -166,7 +207,7 @@ export const ProfilePage = () => {
                     rows={3}
                   />
                   <div className="flex gap-2">
-                    <Button onClick={handleSaveProfile}>Сохранить</Button>
+                    <Button onClick={handleSaveProfile} disabled={isSaving}>{isSaving ? 'Сохранение...' : 'Сохранить'}</Button>
                     <Button variant="outline" onClick={() => setIsEditing(false)}>Отмена</Button>
                   </div>
                 </div>
@@ -207,7 +248,7 @@ export const ProfilePage = () => {
                   
                   <div className="flex items-center gap-2 mt-4 text-slate-400 text-sm">
                     <Calendar className="w-4 h-4" />
-                    <span>На Dwello с {new Date(user.createdAt).toLocaleDateString('ru-RU')}</span>
+                    <span>На Dwello с {user.createdAt && !isNaN(new Date(user.createdAt).getTime()) ? new Date(user.createdAt).toLocaleDateString('ru-RU') : ''}</span>
                   </div>
                 </>
               )}

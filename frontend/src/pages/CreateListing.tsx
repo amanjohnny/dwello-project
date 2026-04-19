@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Upload, X, Home } from 'lucide-react';
 import { Button, Input, Select, Textarea, Card } from '../components';
 import { listingsService } from '../api';
+import { supabase } from '../api/supabase';
 import { useAuthStore } from '../store';
 import { KAZAKHSTAN_CITIES, type HousingType, type LifestyleTag, type KazakhstanCity } from '../types';
 
@@ -41,6 +42,7 @@ export const CreateListingPage = () => {
   const [availableSpots, setAvailableSpots] = useState('1');
   const [tags, setTags] = useState<LifestyleTag[]>([]);
   const [images, setImages] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -85,6 +87,39 @@ export const CreateListingPage = () => {
     setIsLoading(true);
 
     try {
+      const finalImageUrls: string[] = [];
+      const user = useAuthStore.getState().user;
+
+      if (!useAuthStore.getState().isDemoMode && imageFiles.length > 0 && user) {
+        for (let i = 0; i < imageFiles.length; i++) {
+          try {
+            const file = imageFiles[i];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}-${Date.now()}-${i}.${fileExt}`;
+
+            const { data, error } = await supabase.storage
+              .from('listing-images')
+              .upload(fileName, file);
+
+            if (error) {
+              console.error("Listing image upload failed:", error.message);
+            } else if (data) {
+              const { data: publicUrlData } = supabase.storage
+                .from('listing-images')
+                .getPublicUrl(fileName);
+              finalImageUrls.push(publicUrlData.publicUrl);
+            }
+          } catch (err) {
+            console.error("Unexpected listing image upload error:", err);
+          }
+        }
+      } else if (useAuthStore.getState().isDemoMode) {
+        // Fallback to local blobs for demo
+        finalImageUrls.push(...images);
+      }
+
+      const imagesToSave = finalImageUrls.length > 0 ? finalImageUrls : (images.length > 0 && useAuthStore.getState().isDemoMode ? images : []);
+
       const response = await listingsService.createListing({
         title: title.trim(),
         description: description.trim(),
@@ -94,7 +129,7 @@ export const CreateListingPage = () => {
         capacity: Number(capacity),
         availableSpots: Number(availableSpots),
         tags,
-        images,
+        images: imagesToSave,
       });
 
       if (response.success && response.data) {
@@ -243,7 +278,10 @@ export const CreateListingPage = () => {
                     />
                     <button
                       type="button"
-                      onClick={() => setImages(images.filter((_, i) => i !== index))}
+                      onClick={() => {
+                        setImages(images.filter((_, i) => i !== index));
+                        setImageFiles(imageFiles.filter((_, i) => i !== index));
+                      }}
                       className="absolute top-1 right-1 p-1 bg-white/90 rounded-full shadow-sm hover:bg-white"
                     >
                       <X className="w-4 h-4 text-slate-600" />
@@ -263,6 +301,7 @@ export const CreateListingPage = () => {
                         const files = Array.from(e.target.files || []);
                         const newImages = files.map(file => URL.createObjectURL(file));
                         setImages((prev) => [...prev, ...newImages].slice(0, 4));
+                        setImageFiles((prev) => [...prev, ...files].slice(0, 4));
                       }}
                     />
                   </label>

@@ -188,28 +188,56 @@ export const ListingDetailsPage = () => {
             {/* Owner */}
             <Card className="p-4">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Владелец</h2>
-              <Link to={`/profile/${listing.owner.id}`} className="block">
-                <div className="flex items-start gap-4 hover:bg-slate-50 p-2 -m-2 rounded-xl transition-colors cursor-pointer">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {listing.owner.avatar ? (
-                      <img
-                        src={listing.owner.avatar}
-                        alt={listing.owner.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-8 h-8 text-blue-600" />
-                    )}
+              {user?.id === listing.owner.id ? (
+                <div className="relative group cursor-not-allowed">
+                  <div className="flex items-start gap-4 p-2 -m-2 rounded-xl opacity-75">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {listing.owner.avatar ? (
+                        <img
+                          src={listing.owner.avatar}
+                          alt={listing.owner.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-8 h-8 text-blue-600" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900">{listing.owner.name}</h3>
+                      <p className="text-slate-500 text-sm">{listing.owner.city}</p>
+                      {listing.owner.bio && (
+                        <p className="text-slate-600 text-sm mt-2">{listing.owner.bio}</p>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{listing.owner.name}</h3>
-                    <p className="text-slate-500 text-sm">{listing.owner.city}</p>
-                    {listing.owner.bio && (
-                      <p className="text-slate-600 text-sm mt-2">{listing.owner.bio}</p>
-                    )}
+                  <div className="absolute left-1/2 -top-8 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap pointer-events-none z-10">
+                    Это же вы!
                   </div>
                 </div>
-              </Link>
+              ) : (
+                <Link to={`/profile/${listing.owner.id}`} className="block">
+                  <div className="flex items-start gap-4 hover:bg-slate-50 p-2 -m-2 rounded-xl transition-colors cursor-pointer">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {listing.owner.avatar ? (
+                        <img
+                          src={listing.owner.avatar}
+                          alt={listing.owner.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-8 h-8 text-blue-600" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{listing.owner.name}</h3>
+                      <p className="text-slate-500 text-sm">{listing.owner.city}</p>
+                      {listing.owner.bio && (
+                        <p className="text-slate-600 text-sm mt-2">{listing.owner.bio}</p>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              )}
             </Card>
           </div>
 
