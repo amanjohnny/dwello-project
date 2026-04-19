@@ -15,6 +15,8 @@ import {
   ChatPage
 } from './pages';
 import { useAuthStore } from './store';
+import { supabase } from './api/supabase';
+import { useListingsStore, useCommentsStore, useMessagesStore, useInterestsStore } from './store';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -133,6 +135,55 @@ const AppContent = () => {
 };
 
 function App() {
+  const [isHydrating, setIsHydrating] = useState(true);
+  const { setDemoMode, login, logout } = useAuthStore();
+
+  useEffect(() => {
+    // CRITICAL: Fix State Leak on Reload
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session && session.user) {
+          // If real user is logged in, disable demo mode
+          setDemoMode(false);
+
+          // STRICTLY clear mock arrays
+          useListingsStore.getState().setListings([]);
+          useCommentsStore.getState().setComments([]);
+          useMessagesStore.getState().setMessages([]);
+          useInterestsStore.getState().setInterests([]);
+
+          // Fetch the real user data
+          const { data: userProfile, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (!error && userProfile) {
+            login(userProfile);
+          } else {
+            logout();
+          }
+        } else {
+          // No real session, default back to whatever it was or keep demo true
+          // Keep the existing state which might be demo.
+        }
+      } catch (err) {
+        console.error("Hydration error:", err);
+      } finally {
+        setIsHydrating(false);
+      }
+    };
+
+    checkSession();
+  }, []);
+
+  if (isHydrating) {
+    return <PageLoader />;
+  }
+
   return (
     <BrowserRouter>
       <AppContent />

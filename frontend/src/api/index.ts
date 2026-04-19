@@ -140,6 +140,35 @@ export const authService = {
     await delay(300);
     const user = mockUsers.find(u => u.id === userId);
     return { success: true, data: user || null };
+  },
+
+  async updateProfile(userId: string, data: Partial<User>): Promise<ApiResponse<User>> {
+    if (!useAuthStore.getState().isDemoMode) {
+      const { data: updatedUser, error } = await supabase
+        .from('users')
+        .update(data)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) return { success: false, error: error.message };
+
+      // Update local store as well
+      const { user, login } = useAuthStore.getState();
+      if (user && user.id === userId) {
+        login({ ...user, ...updatedUser });
+      }
+
+      return { success: true, data: updatedUser };
+    }
+
+    await delay(500);
+    const { user, login } = useAuthStore.getState();
+    if (!user || user.id !== userId) return { success: false, error: 'User not found or unauthorized' };
+
+    const updatedUser = { ...user, ...data };
+    login(updatedUser);
+    return { success: true, data: updatedUser };
   }
 };
 
