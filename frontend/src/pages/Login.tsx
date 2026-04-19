@@ -97,10 +97,25 @@ export const LoginPage = () => {
           </div>
 
           {/* Demo hint */}
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <p className="text-xs text-blue-700">
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg flex flex-col items-center gap-3">
+            <p className="text-xs text-blue-700 text-center">
               <strong>Демо режим:</strong> Введите любой email и пароль "demo123" для входа
             </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setEmail('demo@example.com');
+                setPassword('demo123');
+                setTimeout(() => {
+                  const form = document.querySelector('form');
+                  if (form) form.requestSubmit();
+                }, 100);
+              }}
+            >
+              Войти в Демо-режим
+            </Button>
           </div>
         </Card>
       </div>

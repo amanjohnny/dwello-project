@@ -1,4 +1,6 @@
-import type { 
+import type {
+  Comment,
+  Message,
   User, 
   Listing, 
   LoginCredentials, 
@@ -9,7 +11,7 @@ import type {
   LifestyleTag,
   KazakhstanCity
 } from '../types';
-import { useAuthStore, useListingsStore, useInterestsStore } from '../store';
+import { useAuthStore, useListingsStore, useInterestsStore, useCommentsStore, useMessagesStore } from '../store';
 
 // Simulated delay for API calls
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -252,5 +254,72 @@ export const searchService = {
     });
 
     return { success: true, data: filtered };
+  },
+};
+
+// Comments Service
+export const commentsService = {
+  async getCommentsByListingId(listingId: string): Promise<ApiResponse<Comment[]>> {
+    await delay(300);
+    const { comments } = useCommentsStore.getState();
+    const listingComments = comments.filter((c) => c.listing_id === listingId);
+    return { success: true, data: listingComments };
+  },
+
+  async addComment(listingId: string, content: string): Promise<ApiResponse<Comment>> {
+    await delay(500);
+
+    const authUser = useAuthStore.getState().user;
+    if (!authUser) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    const newComment: Comment = {
+      id: `comment-${Date.now()}`,
+      listing_id: listingId,
+      user_id: authUser.id,
+      user: authUser,
+      content,
+      createdAt: new Date().toISOString(),
+    };
+
+    useCommentsStore.getState().addComment(newComment);
+
+    return { success: true, data: newComment };
+  },
+};
+
+// Messages Service
+export const messagesService = {
+  async getMessages(userId1: string, userId2: string): Promise<ApiResponse<Message[]>> {
+    await delay(300);
+    const { messages } = useMessagesStore.getState();
+    const chatMessages = messages.filter(
+      (m) => (m.sender_id === userId1 && m.receiver_id === userId2) ||
+             (m.sender_id === userId2 && m.receiver_id === userId1)
+    ).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    return { success: true, data: chatMessages };
+  },
+
+  async sendMessage(receiverId: string, content: string): Promise<ApiResponse<Message>> {
+    await delay(300);
+
+    const authUser = useAuthStore.getState().user;
+    if (!authUser) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    const newMessage: Message = {
+      id: `msg-${Date.now()}`,
+      sender_id: authUser.id,
+      receiver_id: receiverId,
+      content,
+      createdAt: new Date().toISOString(),
+    };
+
+    useMessagesStore.getState().addMessage(newMessage);
+
+    return { success: true, data: newMessage };
   },
 };
