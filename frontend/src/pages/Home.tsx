@@ -1,19 +1,35 @@
+import { useEffect } from 'react';
 import { SearchX } from 'lucide-react';
-import { ListingCard, ListingCardSkeleton, Button, FloatingActionButton } from '../components';
+import { ListingCard, ListingCardSkeleton, FloatingActionButton } from '../components';
 import { useListingsStore, useInterestsStore, useAuthStore, useLanguageStore } from '../store';
 import { t } from '../i18n';
-import { interestsService } from '../api';
+import { interestsService, listingsService } from '../api';
 import type { Listing } from '../types';
 
 export const HomePage = () => {
-  const { filteredListings, isLoading, filters } = useListingsStore();
+  const { filteredListings, isLoading, filters, setListings } = useListingsStore();
   const { interests } = useInterestsStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { language } = useLanguageStore();
+
+  useEffect(() => {
+    const loadListings = async () => {
+      const response = await listingsService.getListings();
+      if (response.success && response.data) {
+        setListings(response.data);
+      }
+    };
+
+    loadListings();
+  }, [setListings]);
 
   const handleInterest = async (listing: Listing) => {
     if (!isAuthenticated) {
       window.location.href = '/login';
+      return;
+    }
+
+    if (user?.id === listing.owner.id) {
       return;
     }
 
