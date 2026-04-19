@@ -14,7 +14,8 @@ import {
   Eye,
   Trash2,
   Phone,
-  Globe
+  Globe,
+  Inbox
 } from 'lucide-react';
 import { Button, Card, Badge, Input, Textarea, Select } from '../components';
 import { useAuthStore, useListingsStore, useInterestsStore, useLanguageStore, useSettingsStore } from '../store';
@@ -37,13 +38,14 @@ export const ProfilePage = () => {
   const [editedPhone, setEditedPhone] = useState(user?.phone || '');
   const [editedAvatar, setEditedAvatar] = useState(user?.avatar || '');
   const [avatarError, setAvatarError] = useState('');
-  const [activeTab, setActiveTab] = useState<'listings' | 'interests' | 'settings'>('listings');
+  const [activeTab, setActiveTab] = useState<'listings' | 'clientInterests' | 'interests' | 'settings'>('listings');
 
   // Get user's listings
   const userListings = listings.filter((l) => l.owner.id === user?.id);
   
   // Get user's interests (listings they are interested in)
   const userInterests = interests.filter((i) => i.interestedUser.id === user?.id);
+  const myListingsInterests = interests.filter((i) => i.listing.owner.id === user?.id);
 
   const handleLogout = () => {
     logout();
@@ -247,6 +249,19 @@ export const ProfilePage = () => {
             {t('myListings', language)}
           </button>
           <button
+            onClick={() => setActiveTab('clientInterests')}
+            className={`
+              flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all
+              ${activeTab === 'clientInterests'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-slate-600 hover:bg-slate-100'
+              }
+            `}
+          >
+            <Inbox className="w-4 h-4" />
+            Отклики клиентов
+          </button>
+          <button
             onClick={() => setActiveTab('interests')}
             className={`
               flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all
@@ -335,6 +350,56 @@ export const ProfilePage = () => {
                         <Trash2 className="w-3 h-3" />
                         Удалить
                       </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        )}
+
+        {activeTab === 'clientInterests' && (
+          <div className="space-y-4">
+            {myListingsInterests && myListingsInterests.length === 0 ? (
+              <Card className="p-8 text-center">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Inbox className="w-8 h-8 text-slate-400" />
+                </div>
+                <h2 className="text-lg font-semibold text-slate-900 mb-2">
+                  Пока нет откликов
+                </h2>
+                <p className="text-slate-500 mb-4">
+                  Когда кто-то откликнется на ваше объявление, вы увидите это здесь
+                </p>
+              </Card>
+            ) : (
+              myListingsInterests && myListingsInterests.map((interest) => (
+                <Card key={interest.id} className="p-4">
+                  <div className="flex gap-4">
+                    <img
+                      src={interest.listing.images[0]}
+                      alt={interest.listing.title}
+                      className="w-24 h-24 rounded-xl object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <Link
+                        to={`/listing/${interest.listing.id}`}
+                        className="font-semibold text-slate-900 hover:text-blue-600 transition-colors"
+                      >
+                        {interest.listing.title}
+                      </Link>
+                      <p className="text-sm text-slate-500 mt-1">
+                        От: <Link to={`/profile/${interest.interestedUser.id}`} className="text-blue-600 hover:underline">{interest.interestedUser.name}</Link>
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge
+                          variant={interest.status === 'accepted' ? 'success' :
+                                  interest.status === 'rejected' ? 'default' : 'warning'}
+                        >
+                          {interest.status === 'pending' ? 'Ожидает' :
+                           interest.status === 'accepted' ? 'Принято' : 'Отклонено'}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 </Card>

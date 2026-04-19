@@ -4,3 +4,4 @@ export { FilterPanel } from './FilterPanel';
 export { FloatingActionButton } from './FloatingActionButton';
 export { Loader, LoadingWrapper } from './Loader';
 export * from './ui';
+export * from './CommentsSection';

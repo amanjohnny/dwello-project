@@ -69,6 +69,23 @@ export interface Interest {
   createdAt: string;
 }
 
+export interface Comment {
+  id: string;
+  listing_id: string;
+  user_id: string;
+  user: User;
+  content: string;
+  createdAt: string;
+}
+
+export interface Message {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  createdAt: string;
+}
+
 // Search filters
 export interface SearchFilters {
   city: string;

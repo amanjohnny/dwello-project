@@ -7,3 +7,4 @@ export { CreateListingPage } from './CreateListing';
 export { MatchesPage } from './Matches';
 export { ProfilePage } from './Profile';
 export * from './PublicProfile';
+export * from './Chat';

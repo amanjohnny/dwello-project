@@ -9,7 +9,7 @@ import {
   Check,
   User
 } from 'lucide-react';
-import { Button, Card, TagsList, Skeleton } from '../components';
+import { Button, Card, TagsList, Skeleton, CommentsSection } from '../components';
 import { useListingsStore, useInterestsStore, useAuthStore } from '../store';
 import { interestsService } from '../api';
 import type { Listing } from '../types';
@@ -224,30 +224,38 @@ export const ListingDetailsPage = () => {
               </div>
 
               <div className="space-y-3">
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={handleSendInterest}
-                  isLoading={isSendingInterest}
-                  disabled={isSaved}
-                >
-                  {isSaved ? (
-                    <>
-                      <Check className="w-5 h-5 mr-2" />
-                      Интерес отправлен
-                    </>
-                  ) : (
-                    'Отправить интерес'
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setIsSaved(!isSaved)}
-                >
-                  <Heart className={`w-5 h-5 mr-2 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
-                  {isSaved ? 'Сохранено' : 'Сохранить'}
-                </Button>
+                {(!user || user.id !== listing.owner.id) ? (
+                  <>
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      onClick={handleSendInterest}
+                      isLoading={isSendingInterest}
+                      disabled={isSaved}
+                    >
+                      {isSaved ? (
+                        <>
+                          <Check className="w-5 h-5 mr-2" />
+                          Интерес отправлен
+                        </>
+                      ) : (
+                        'Отправить интерес'
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setIsSaved(!isSaved)}
+                    >
+                      <Heart className={`w-5 h-5 mr-2 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
+                      {isSaved ? 'Сохранено' : 'Сохранить'}
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-center text-sm text-slate-500 py-2 border rounded-xl bg-slate-50">
+                    Это ваше объявление
+                  </p>
+                )}
               </div>
 
               <div className="mt-6 pt-6 border-t border-slate-100">
@@ -258,6 +266,9 @@ export const ListingDetailsPage = () => {
             </Card>
           </div>
         </div>
+
+        {/* Comments Section */}
+        <CommentsSection listing={listing} />
       </div>
     </div>
   );

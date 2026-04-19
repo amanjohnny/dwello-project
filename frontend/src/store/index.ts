@@ -1,3 +1,4 @@
+import type { Comment, Message } from "../types";
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { 
@@ -199,15 +200,11 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       login: (user) => {
         set({ user, isAuthenticated: true, isLoading: false });
-        if (user.email.toLowerCase().includes('demo')) {
-          useListingsStore.getState().setListings(mockListings);
-        } else {
-          useListingsStore.getState().setListings([]);
-        }
+        useListingsStore.getState().setListings(mockListings);
       },
       logout: () => {
         set({ user: null, isAuthenticated: false, isLoading: false });
-        useListingsStore.getState().setListings([]);
+        useListingsStore.getState().setListings(mockListings);
       },
       setLoading: (isLoading) => set({ isLoading }),
     }),
@@ -232,8 +229,8 @@ interface ListingsState {
 }
 
 export const useListingsStore = create<ListingsState>()((set, get) => ({
-  listings: [],
-  filteredListings: [],
+  listings: mockListings,
+  filteredListings: mockListings,
   isLoading: false,
   filters: defaultFilters,
 
@@ -386,3 +383,29 @@ export const useSettingsStore = create<SettingsState>()(
     }
   )
 );
+
+// Comments Store
+interface CommentsState {
+  comments: Comment[];
+  addComment: (comment: Comment) => void;
+  setComments: (comments: Comment[]) => void;
+}
+
+export const useCommentsStore = create<CommentsState>()((set, get) => ({
+  comments: [],
+  addComment: (comment) => set({ comments: [...get().comments, comment] }),
+  setComments: (comments) => set({ comments }),
+}));
+
+// Messages Store
+interface MessagesState {
+  messages: Message[];
+  addMessage: (message: Message) => void;
+  setMessages: (messages: Message[]) => void;
+}
+
+export const useMessagesStore = create<MessagesState>()((set, get) => ({
+  messages: [],
+  addMessage: (message) => set({ messages: [...get().messages, message] }),
+  setMessages: (messages) => set({ messages }),
+}));

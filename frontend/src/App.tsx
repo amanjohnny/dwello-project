@@ -11,7 +11,8 @@ import {
   CreateListingPage,
   MatchesPage,
   ProfilePage,
-  PublicProfilePage
+  PublicProfilePage,
+  ChatPage
 } from './pages';
 import { useAuthStore } from './store';
 
@@ -111,6 +112,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <PublicProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat/:userId"
+            element={
+              <ProtectedRoute>
+                <ChatPage />
               </ProtectedRoute>
             }
           />
