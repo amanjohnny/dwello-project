@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { MapPin, Users, Heart, Eye } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Card, TagsList, Button } from './ui';
 import { useLanguageStore } from '../store';
 import { t } from '../i18n';
@@ -26,8 +27,15 @@ export const ListingCard = ({ listing, onInterest, isInterested }: ListingCardPr
   };
 
   return (
-    <Card hover className="overflow-hidden group">
-      {/* Image */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.3 }}
+      className="h-full"
+    >
+      <Card hover className="overflow-hidden group h-full">
+        {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
           src={listing.images[0] || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'}
@@ -94,6 +102,7 @@ export const ListingCard = ({ listing, onInterest, isInterested }: ListingCardPr
           </div>
         </div>
       </div>
-    </Card>
+      </Card>
+    </motion.div>
   );
 };
