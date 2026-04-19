@@ -197,8 +197,18 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: false,
-      login: (user) => set({ user, isAuthenticated: true, isLoading: false }),
-      logout: () => set({ user: null, isAuthenticated: false, isLoading: false }),
+      login: (user) => {
+        set({ user, isAuthenticated: true, isLoading: false });
+        if (user.email.toLowerCase().includes('demo')) {
+          useListingsStore.getState().setListings(mockListings);
+        } else {
+          useListingsStore.getState().setListings([]);
+        }
+      },
+      logout: () => {
+        set({ user: null, isAuthenticated: false, isLoading: false });
+        useListingsStore.getState().setListings([]);
+      },
       setLoading: (isLoading) => set({ isLoading }),
     }),
     {
@@ -222,8 +232,8 @@ interface ListingsState {
 }
 
 export const useListingsStore = create<ListingsState>()((set, get) => ({
-  listings: mockListings,
-  filteredListings: mockListings,
+  listings: [],
+  filteredListings: [],
   isLoading: false,
   filters: defaultFilters,
 

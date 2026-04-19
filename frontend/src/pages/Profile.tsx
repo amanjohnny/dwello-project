@@ -35,6 +35,8 @@ export const ProfilePage = () => {
   const [editedCity, setEditedCity] = useState<KazakhstanCity | ''>(user?.city || '');
   const [editedBio, setEditedBio] = useState(user?.bio || '');
   const [editedPhone, setEditedPhone] = useState(user?.phone || '');
+  const [editedAvatar, setEditedAvatar] = useState(user?.avatar || '');
+  const [avatarError, setAvatarError] = useState('');
   const [activeTab, setActiveTab] = useState<'listings' | 'interests' | 'settings'>('listings');
 
   // Get user's listings
@@ -48,6 +50,24 @@ export const ProfilePage = () => {
     navigate('/login');
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAvatarError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+      setAvatarError('Только изображения (PNG, JPG, JPEG)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('Файл должен быть меньше 5МБ');
+      return;
+    }
+
+    setEditedAvatar(URL.createObjectURL(file));
+  };
+
   const handleSaveProfile = () => {
     if (user && editedName) {
       login({
@@ -56,6 +76,7 @@ export const ProfilePage = () => {
         city: editedCity as KazakhstanCity,
         bio: editedBio,
         phone: editedPhone,
+        avatar: editedAvatar,
       });
       setIsEditing(false);
     }
@@ -81,17 +102,34 @@ export const ProfilePage = () => {
           <div className="flex flex-col md:flex-row gap-6">
             {/* Avatar */}
             <div className="flex-shrink-0">
-              <div className="w-32 h-32 bg-blue-100 rounded-2xl flex items-center justify-center">
-                {user.avatar ? (
+              <div className="w-32 h-32 bg-blue-100 rounded-2xl flex items-center justify-center overflow-hidden relative group">
+                {(isEditing ? editedAvatar : user.avatar) ? (
                   <img
-                    src={user.avatar}
+                    src={(isEditing ? editedAvatar : user.avatar) as string}
                     alt={user.name}
-                    className="w-full h-full rounded-2xl object-cover"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <User className="w-16 h-16 text-blue-600" />
                 )}
+                {isEditing && (
+                  <label className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <Edit className="w-6 h-6 mb-1" />
+                    <span className="text-xs">Сменить</span>
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg, image/jpg"
+                      className="hidden"
+                      onChange={handleAvatarChange}
+                    />
+                  </label>
+                )}
               </div>
+              {isEditing && avatarError && (
+                <p className="text-xs text-red-500 mt-2 text-center max-w-[128px]">
+                  {avatarError}
+                </p>
+              )}
             </div>
 
             {/* User Info */}

@@ -6,3 +6,4 @@ export { ListingDetailsPage } from './ListingDetails';
 export { CreateListingPage } from './CreateListing';
 export { MatchesPage } from './Matches';
 export { ProfilePage } from './Profile';
+export * from './PublicProfile';
