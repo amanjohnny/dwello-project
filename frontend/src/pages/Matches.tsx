@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, Users, Clock, Check, X, User, ArrowRight } from 'lucide-react';
 import { Button, Card, Badge } from '../components';
-import { useAuthStore, useInterestsStore, useListingsStore } from '../store';
+import { useAuthStore, useInterestsStore } from '../store';
 import { interestsService } from '../api';
 import type { Interest, InterestStatus } from '../types';
 
@@ -16,29 +16,43 @@ export const MatchesPage = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
   const { interests } = useInterestsStore();
-  const { listings } = useListingsStore();
   
   const [activeTab, setActiveTab] = useState<'sent' | 'received'>('sent');
+  // ИСПРАВЛЕНО: Вернули случайно удаленную переменную
   const [myListingsInterests, setMyListingsInterests] = useState<Interest[]>([]);
-
+  
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
 
-    // Get interests for my listings (received)
-    const userListings = listings.filter((l) => l.owner.id === user?.id);
-    const receivedInterests = interests.filter((i) =>
-      userListings.some((l) => l.id === i.listing.id)
-    );
-    setMyListingsInterests(receivedInterests);
-  }, [isAuthenticated, user, interests, listings, navigate]);
+    const loadMatches = async () => {
+      // 1. Заставляем сайт скачать МОИ отклики
+      await interestsService.getInterests();
+      
+      // 2. Скачиваем ОТКЛИКИ НА МЕНЯ
+      const response = await interestsService.getMyListingsInterests();
+      if (response.success && response.data) {
+        setMyListingsInterests(response.data);
+      }
+    };
+
+    loadMatches();
+  }, [isAuthenticated, navigate]);
+
+  // ИСПРАВЛЕНО: Убрана лишняя скобка и мусорный код, который ломал компиляцию
 
   const sentInterests = interests.filter((i) => i.interestedUser.id === user?.id);
 
   const handleUpdateStatus = async (interestId: string, status: InterestStatus) => {
     await interestsService.updateInterestStatus(interestId, status);
+    // Мгновенно обновляем UI вкладки
+    setMyListingsInterests(prev => 
+      prev.map(interest => 
+        interest.id === interestId ? { ...interest, status } : interest
+      )
+    );
   };
 
   if (!isAuthenticated) {
@@ -121,7 +135,7 @@ export const MatchesPage = () => {
                     <div className="flex-1">
                       <div className="flex items-start gap-3">
                         <img
-                          src={interest.listing.images[0]}
+                          src={interest.listing.images && interest.listing.images.length > 0 ? interest.listing.images[0] : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800'}
                           alt={interest.listing.title}
                           className="w-20 h-20 rounded-xl object-cover"
                         />

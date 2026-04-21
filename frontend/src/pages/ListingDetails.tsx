@@ -34,18 +34,25 @@ export const ListingDetailsPage = () => {
   const [isSendingInterest, setIsSendingInterest] = useState(false);
 
   useEffect(() => {
-    const foundListing = listings.find((l) => l.id === id);
-    setListing(foundListing || null);
-    setIsLoading(false);
+    const loadDetails = async () => {
+      const foundListing = listings.find((l) => l.id === id);
+      setListing(foundListing || null);
+      setIsLoading(false);
 
-    // Check if already interested
-    if (user && foundListing) {
-      const alreadyInterested = interests.some(
-        (i) => i.listing.id === foundListing.id && i.interestedUser.id === user.id
-      );
-      setIsSaved(alreadyInterested);
-    }
-  }, [id, listings, interests, user]);
+      if (user && foundListing) {
+        // ИСПРАВЛЕНИЕ: Скачиваем актуальные отклики из БД перед проверкой
+        await interestsService.getInterests();
+        const latestInterests = useInterestsStore.getState().interests;
+        
+        const alreadyInterested = latestInterests.some(
+          (i) => i.listing.id === foundListing.id && i.interestedUser.id === user.id
+        );
+        setIsSaved(alreadyInterested);
+      }
+    };
+
+    loadDetails();
+  }, [id, listings, user]);
 
   const handleSendInterest = async () => {
     if (!isAuthenticated) {

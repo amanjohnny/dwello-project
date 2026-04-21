@@ -1,16 +1,6 @@
 import { supabase } from "./supabase";
 import type {
-  Comment,
-  Message,
-  User, 
-  Listing, 
-  LoginCredentials, 
-  RegisterData, 
-  ApiResponse,
-  Interest,
-  HousingType,
-  LifestyleTag,
-  KazakhstanCity
+  Comment, Message, User, Listing, LoginCredentials, RegisterData, ApiResponse, Interest, HousingType, LifestyleTag, KazakhstanCity
 } from '../types';
 import { useAuthStore, useListingsStore, useInterestsStore, useCommentsStore, useMessagesStore } from '../store';
 
@@ -90,7 +80,7 @@ export const authService = {
   },
 
   async logout(): Promise<ApiResponse<void>> {
-    await delay(300);
+    await supabase.auth.signOut();
     return { success: true };
   },
 
@@ -117,11 +107,15 @@ export const authService = {
 
   async updateProfile(userId: string, data: Partial<User>): Promise<ApiResponse<User>> {
     if (!useAuthStore.getState().isDemoMode) {
-      const payload: any = { ...data };
-      if (payload.avatar !== undefined) {
-        payload.avatar_url = payload.avatar;
-        delete payload.avatar;
-      }
+      // КРИТИЧЕСКАЯ ОЧИСТКА: отправляем только разрешенные поля!
+      const payload: any = {};
+      if (data.name) payload.name = data.name;
+      if (data.city) payload.city = data.city;
+      if (data.phone) payload.phone = data.phone;
+      if (data.bio) payload.bio = data.bio;
+      
+      if (data.avatar) payload.avatar_url = data.avatar;
+      else if ((data as any).avatar_url) payload.avatar_url = (data as any).avatar_url;
 
       const { data: updatedUser, error } = await supabase
         .from('users')
@@ -132,11 +126,15 @@ export const authService = {
 
       if (error) return { success: false, error: error.message };
 
-      const mappedUser = { ...updatedUser, avatar: updatedUser.avatar_url, createdAt: updatedUser.created_at };
+      const mappedUser = { 
+        ...updatedUser, 
+        avatar: updatedUser.avatar_url, 
+        createdAt: updatedUser.created_at 
+      };
 
       const { user, login } = useAuthStore.getState();
       if (user && user.id === userId) {
-        login({ ...user, ...mappedUser });
+        login(mappedUser);
       }
 
       return { success: true, data: mappedUser as User };
@@ -251,7 +249,7 @@ export const listingsService = {
 
   async deleteListing(id: string): Promise<ApiResponse<void>> {
     return { success: false, error: 'Not implemented' };
-  },
+  }
 };
 
 export const interestsService = {
@@ -265,10 +263,7 @@ export const interestsService = {
         .select('*, listings(*, users(*)), users(*)')
         .eq('user_id', authUser.id);
 
-      if (error) {
-          console.error("Ошибка скачивания откликов:", error);
-          return { success: false, error: error.message };
-      }
+      if (error) return { success: false, error: error.message };
 
       const mappedData = (data || []).map(item => {
         const listingObj = Array.isArray(item.listings) ? item.listings[0] : item.listings;
@@ -391,15 +386,16 @@ export const interestsService = {
     await delay(300);
     useInterestsStore.getState().updateInterestStatus(interestId, status);
     return { success: true, data: useInterestsStore.getState().interests.find((i) => i.id === interestId)! };
-  },
+  }
 };
 
 export const searchService = {
   async searchListings(params: any): Promise<ApiResponse<Listing[]>> {
     return { success: true, data: [] };
-  },
+  }
 };
 
+// ВОССТАНОВЛЕННЫЕ СЕРВИСЫ
 export const commentsService = {
   async getCommentsByListingId(listingId: string): Promise<ApiResponse<Comment[]>> {
     if (!useAuthStore.getState().isDemoMode) {
@@ -437,7 +433,7 @@ export const commentsService = {
     const newComment: Comment = { id: `comment-${Date.now()}`, listing_id: listingId, user_id: authUser.id, user: authUser, content, createdAt: new Date().toISOString() };
     useCommentsStore.getState().addComment(newComment);
     return { success: true, data: newComment };
-  },
+  }
 };
 
 export const messagesService = {
@@ -480,5 +476,5 @@ export const messagesService = {
     const newMessage: Message = { id: `msg-${Date.now()}`, sender_id: authUser.id, receiver_id: receiverId, content, createdAt: new Date().toISOString() };
     useMessagesStore.getState().addMessage(newMessage);
     return { success: true, data: newMessage };
-  },
+  }
 };

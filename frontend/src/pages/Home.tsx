@@ -7,21 +7,30 @@ import { interestsService, listingsService } from '../api';
 import type { Listing } from '../types';
 
 export const HomePage = () => {
-  const { filteredListings, isLoading, filters, setListings } = useListingsStore();
+  // ИСПРАВЛЕНО: добавлено setLoading вместо setIsLoading
+  const { filteredListings, isLoading, filters, setListings, setLoading } = useListingsStore();
   const { interests } = useInterestsStore();
   const { isAuthenticated, user } = useAuthStore();
   const { language } = useLanguageStore();
 
   useEffect(() => {
-    const loadListings = async () => {
+    const loadData = async () => {
+      setLoading(true); // ИСПРАВЛЕНО
+      
       const response = await listingsService.getListings();
       if (response.success && response.data) {
         setListings(response.data);
       }
+      
+      if (isAuthenticated) {
+        await interestsService.getInterests();
+      }
+      
+      setLoading(false); // ИСПРАВЛЕНО
     };
 
-    loadListings();
-  }, [setListings]);
+    loadData();
+  }, [setListings, isAuthenticated, setLoading]);
 
   const handleInterest = async (listing: Listing) => {
     if (!isAuthenticated) {
